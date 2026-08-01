@@ -1,0 +1,3 @@
+-keep class androidx.lifecycle.DefaultLifecycleObserver
+-keepattributes Signature
+-keep class com.onesignal.** { *; }

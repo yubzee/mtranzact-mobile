@@ -1,0 +1,2 @@
+/Volumes/Mac Storage/Developer/LionCoders/salepro/android/app/.cxx/RelWithDebInfo/6ux4p3g5/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Volumes/Mac Storage/Developer/LionCoders/salepro/android/app/.cxx/RelWithDebInfo/6ux4p3g5/armeabi-v7a/CMakeFiles/rebuild_cache.dir
