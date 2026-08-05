@@ -34,106 +34,141 @@ String getPlatform() {
 }
 
 Future<Message> setup(Map<String, dynamic> config) async {
-  final response = await http.post(
-    Uri.parse("${config['install_url']}/api/check"),
-    body: {...config, 'platform': getPlatform()},
-    headers: {'Accept': 'application/json'},
-  );
-  if (response.statusCode == 200) {
-    try {
+  try {
+    if (!config.containsKey('install_url') || config['install_url'] == null) {
+      return Message.fromJson({
+        'success': false,
+        'message': "Installation URL is required",
+      });
+    }
+
+    final response = await http.post(
+      Uri.parse("${config['install_url']}/api/check"),
+      body: {...config, 'platform': getPlatform()},
+      headers: {'Accept': 'application/json'},
+    );
+    
+    if (response.statusCode == 200) {
+      try {
+        final body = jsonDecode(response.body);
+        Message message = Message.fromJson(body);
+
+        if (message.data != null && message.data!['token'] != null) {
+          final SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString(
+              AppKeys.saleproInstallURL, "${config['install_url']}/api");
+          prefs.setString(AppKeys.saleproSetupToken, message.data!['token']);
+          return message;
+        } else {
+          return message;
+        }
+      } catch (e) {
+        return Message.fromJson(
+          {
+            'success': false,
+            'message': "Invalid Installation URL...",
+          },
+        );
+      }
+    } else {
+      try {
+        final body = jsonDecode(response.body);
+        return Message.fromJson(body);
+      } catch (e) {
+        return Message.fromJson(
+          {
+            'success': false,
+            'message': "Invalid Installation URL...",
+          },
+        );
+      }
+    }
+  } on SocketException catch (_) {
+    return Message.fromJson({
+      'success': false,
+      'message': "No internet connection. Please check your network.",
+    });
+  } catch (e) {
+    return Message.fromJson({
+      'success': false,
+      'message': "Something went wrong: ${e.toString()}",
+    });
+  }
+}
+
+Future<Message> register(Map<String, dynamic> userData) async {
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String apiUrl = prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
+    String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? "";
+
+    final response = await http.post(
+      Uri.parse("$apiUrl/register?token=$spToken"),
+      body: userData,
+      headers: {'Accept': 'application/json'},
+    );
+    
+    if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
       Message message = Message.fromJson(body);
 
       if (message.data != null && message.data!['token'] != null) {
         final SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString(
-            AppKeys.saleproInstallURL, "${config['install_url']}/api");
-        prefs.setString(AppKeys.saleproSetupToken, message.data!['token']);
+        prefs.setString(AppKeys.loginKey, message.data!['token']);
         return message;
       } else {
         return message;
       }
-    } catch (e) {
-      return Message.fromJson(
-        {
-          'success': false,
-          'message': "Invalid Installation URL...",
-        },
-      );
-    }
-  } else {
-    try {
-      final body = jsonDecode(response.body);
-      return Message.fromJson(body);
-    } catch (e) {
-      return Message.fromJson(
-        {
-          'success': false,
-          'message': "Invalid Installation URL...",
-        },
-      );
-    }
-  }
-}
-
-Future<Message> register(Map<String, dynamic> userData) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  String apiUrl = prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
-  String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? "";
-
-  final response = await http.post(
-    Uri.parse("$apiUrl/register?token=$spToken"),
-    body: userData,
-    headers: {'Accept': 'application/json'},
-  );
-  if (response.statusCode == 200) {
-    final body = jsonDecode(response.body);
-    Message message = Message.fromJson(body);
-
-    if (message.data != null && message.data!['token'] != null) {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString(AppKeys.loginKey, message.data!['token']);
-      return message;
     } else {
-      return message;
+      final body = jsonDecode(response.body);
+      if (body['invalid_token'] != null && body['invalid_token']) {
+        prefs.clear();
+      }
+      return Message.fromJson(body);
     }
-  } else {
-    final body = jsonDecode(response.body);
-    if (body['invalid_token'] != null && body['invalid_token']) {
-      prefs.clear();
-    }
-    return Message.fromJson(body);
+  } catch (e) {
+    return Message.fromJson({
+      'success': false,
+      'message': "Registration failed: ${e.toString()}",
+    });
   }
 }
 
 Future<Message> login(Map<String, dynamic> userData) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  String apiUrl = prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
-  String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? "";
+  try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String apiUrl = prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
+    String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? "";
 
-  final response = await http.post(
-    Uri.parse("$apiUrl/login?token=$spToken"),
-    body: userData,
-    headers: {'Accept': 'application/json'},
-  );
+    final response = await http.post(
+      Uri.parse("$apiUrl/login?token=$spToken"),
+      body: userData,
+      headers: {'Accept': 'application/json'},
+    );
 
-  if (response.statusCode == 200) {
-    final body = jsonDecode(response.body);
-    Message message = Message.fromJson(body);
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      Message message = Message.fromJson(body);
 
-    if (message.data != null && message.data!['token'] != null) {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString(AppKeys.loginKey, message.data!['token']);
-      return message;
+      if (message.data != null && message.data!['token'] != null) {
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString(AppKeys.loginKey, message.data!['token']);
+        return message;
+      } else {
+        return message;
+      }
     } else {
-      return message;
+      final body = jsonDecode(response.body);
+      if (body['invalid_token'] != null && body['invalid_token']) {
+        prefs.clear();
+      }
+      return Message.fromJson(body);
     }
-  } else {
-    final body = jsonDecode(response.body);
-    if (body['invalid_token'] != null && body['invalid_token']) {
-      prefs.clear();
-    }
-    return Message.fromJson(body);
+  } catch (e) {
+    return Message.fromJson({
+      'success': false,
+      'message': "Login failed: ${e.toString()}",
+    });
   }
 }
 
@@ -168,7 +203,9 @@ Future<Map<String, dynamic>> verifyToken(String token) async {
       final data = jsonDecode(prefs.getString(dataKey)!);
       return {...data, 'success': true};
     } else {
-      return {'success': false};
+      return {'success': false, 'message': 'No internet connection'};
     }
+  } catch (e) {
+    return {'success': false, 'message': e.toString()};
   }
 }

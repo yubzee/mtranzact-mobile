@@ -8,21 +8,21 @@ import 'package:salepro/models/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Message> changeActiveThemeSetting(int themeId) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final String apiUrl =
-      prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
-  final String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? '';
-  final String token = prefs.getString(AppKeys.loginKey) ?? '';
-
-  if (spToken.trim().isEmpty) {
-    return Message.fromJson({
-      'success': false,
-      'message': 'Setup token missing. Please reinstall or set up again.',
-      'invalid_license_token': true,
-    });
-  }
-
   try {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String apiUrl =
+        prefs.getString(AppKeys.saleproInstallURL) ?? defaultApiURL;
+    final String spToken = prefs.getString(AppKeys.saleproSetupToken) ?? '';
+    final String token = prefs.getString(AppKeys.loginKey) ?? '';
+
+    if (spToken.trim().isEmpty) {
+      return Message.fromJson({
+        'success': false,
+        'message': 'Setup token missing. Please reinstall or set up again.',
+        'invalid_license_token': true,
+      });
+    }
+
     final Uri uri = Uri.parse('$apiUrl/change-active-theme/$themeId').replace(
       queryParameters: <String, String>{
         'token': spToken,
@@ -45,7 +45,6 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
       body = null;
     }
 
-    // If server didn't return JSON, surface a useful message.
     if (body == null) {
       return Message.fromJson({
         'success': false,
@@ -53,7 +52,6 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
       });
     }
 
-    // Improve error messaging if backend sent list errors.
     final dynamic rawErrors = body['errors'];
     if ((body['message'] == null ||
             body['message'].toString().trim().isEmpty) &&
@@ -65,8 +63,6 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
       };
     }
 
-    // Some endpoints may return JSON without a `success` flag.
-    // Infer success from HTTP status to avoid false negatives.
     if (!body.containsKey('success')) {
       final inferredSuccess =
           response.statusCode >= 200 && response.statusCode < 300;
@@ -81,7 +77,6 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
       };
     }
 
-    // Final guard: never allow an empty message on failure.
     if ((body['message'] == null ||
             body['message'].toString().trim().isEmpty) &&
         (body['success'] == false ||
@@ -95,12 +90,10 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
 
     final message = Message.fromJson(body);
 
-    // Detect invalid token and clear it.
     if (body['invalid_token'] == true || message.invalidToken) {
       await prefs.remove(AppKeys.loginKey);
     }
 
-    // If HTTP status is not success, force success=false even if server forgot.
     if (response.statusCode < 200 || response.statusCode >= 300) {
       return Message.fromJson({
         ...body,
@@ -120,7 +113,7 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
   } catch (e) {
     return Message.fromJson({
       'success': false,
-      'message': e.toString(),
+      'message': 'Error: ${e.toString()}',
     });
   }
 }

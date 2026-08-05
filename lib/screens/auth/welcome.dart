@@ -1,4 +1,10 @@
-import 'package:flutter/foundation.dart';
+/*
+  Author Name: Zarif Sadman
+  Company: LionCoders
+  Website: https://lion-coders.com/
+  File Name: welcome
+*/
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:salepro/constants/colors.dart';
@@ -21,6 +27,9 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _isInitialized = false;
+  bool _hasError = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -29,121 +38,135 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Future<void> _getAppData() async {
-    Future.microtask(() async {
-      try {
-        debugPrint("");
-        debugPrint("======================================");
-        debugPrint("🚀 APPLICATION STARTING");
-        debugPrint("======================================");
+    if (_isInitialized) return;
+    _isInitialized = true;
 
-        final SharedPreferences prefs =
-            await SharedPreferences.getInstance();
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? apiUrl = prefs.getString(AppKeys.saleproInstallURL);
+      final String? spToken = prefs.getString(AppKeys.saleproSetupToken);
 
-        final String? apiUrl =
-            prefs.getString(AppKeys.saleproInstallURL);
+      if (!mounted) return;
 
-        final String? spToken =
-            prefs.getString(AppKeys.saleproSetupToken);
-
-        debugPrint("API URL:");
-        debugPrint(apiUrl ?? "(NULL)");
-
-        debugPrint("Setup Token:");
-        debugPrint(spToken ?? "(NULL)");
-
-        if (!mounted) return;
-
-        if (apiUrl != null && spToken != null) {
-          debugPrint("Loading CommonDataProvider...");
-
-          await context.read<CommonDataProvider>().getData();
-
-          debugPrint("CommonDataProvider Loaded.");
-
-          if (!mounted) return;
-
-          if (context.read<CommonDataProvider>().token != null) {
-            debugPrint("User already logged in.");
-            debugPrint("Opening Dashboard.");
-
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => CustomViewScreen(
-                  apiUrl: '/dashboard',
-                  title: 'Dashboard',
-                ),
-              ),
-            );
-          } else {
-            debugPrint("User not logged in.");
-            debugPrint("Opening Login Screen.");
-
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => const DynamicFormScreen(
-                  title: "Login",
-                  apiUrl: "/login/create",
-                ),
-              ),
-            );
-          }
-        } else {
-          debugPrint("No installation found.");
-          debugPrint("Opening Setup Screen.");
-
+      if (apiUrl == null || spToken == null) {
+        if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) => const SetupScreen(),
+              builder: (ctx) => const SetupScreen(),
             ),
           );
         }
-      } catch (e, stack) {
-        debugPrint("");
-        debugPrint("======================================");
-        debugPrint("🚨 WELCOME SCREEN ERROR");
-        debugPrint("======================================");
-        debugPrint(e.toString());
-        debugPrint(stack.toString());
-        debugPrint("======================================");
-
-        if (!mounted) return;
-
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) {
-            return AlertDialog(
-              title: const Text("Application Error"),
-              content: SingleChildScrollView(
-                child: SelectableText(
-                  "$e\n\n$stack",
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SetupScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text("Go to Setup"),
-                ),
-              ],
-            );
-          },
-        );
+        return;
       }
+
+      try {
+        await context.read<CommonDataProvider>().getData();
+      } catch (e) {
+        debugPrint('Failed to fetch data: $e');
+        // Continue - we can still try to navigate
+      }
+
+      if (!mounted) return;
+
+      final token = context.read<CommonDataProvider>().token;
+      if (token != null && token.isNotEmpty) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (ctx) => CustomViewScreen(
+                apiUrl: '/dashboard',
+                title: 'Dashboard',
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (ctx) => const DynamicFormScreen(
+                title: "Login",
+                apiUrl: "/login/create",
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('WelcomeScreen error: $e');
+      setState(() {
+        _hasError = true;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _isInitialized = false;
+      _hasError = false;
+      _errorMessage = null;
     });
+    _getAppData();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_hasError) {
+      return Scaffold(
+        body: Container(
+          color: useThemeMode(
+            context,
+            light: AppColors.white,
+            dark: Colors.black,
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.red.shade400,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Something went wrong',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: useThemeMode(
+                      context,
+                      light: Colors.black87,
+                      dark: Colors.white70,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  _errorMessage ?? 'Unknown error occurred',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: useThemeMode(
+                      context,
+                      light: Colors.grey.shade700,
+                      dark: Colors.grey.shade400,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: _retry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Container(
         color: useThemeMode(
@@ -163,27 +186,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ? Image.network(
                         getAppLogo(context)!,
                         height: AppSpacing.kDefaultSpacing(context) * 4,
-                        errorBuilder:
-                            (context, error, stackTrace) =>
-                                Image.asset(
-                          getAppLogo(
-                            context,
-                            useNetworkLogo: false,
-                          )!,
-                          height:
-                              AppSpacing.kDefaultSpacing(context) *
-                                  4,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                          getAppLogo(context, useNetworkLogo: false)!,
+                          height: AppSpacing.kDefaultSpacing(context) * 4,
                         ),
                       )
                     : Image.asset(
-                        getAppLogo(
-                          context,
-                          useNetworkLogo: false,
-                        )!,
-                        height:
-                            AppSpacing.kDefaultSpacing(context) *
-                                4,
+                        getAppLogo(context, useNetworkLogo: false)!,
+                        height: AppSpacing.kDefaultSpacing(context) * 4,
                       ),
+              ),
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 10),
+              Text(
+                'Loading...',
+                style: TextStyle(
+                  color: useThemeMode(
+                    context,
+                    light: Colors.grey.shade600,
+                    dark: Colors.grey.shade400,
+                  ),
+                ),
               ),
             ],
           ),

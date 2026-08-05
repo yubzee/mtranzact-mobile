@@ -52,6 +52,8 @@ class _SetupScreenState extends State<SetupScreen> {
   String demoUrl = defaultServerUrl;
   String demoKey = "000000";
   Message? message;
+  bool _isLoading = false;
+  bool _isFetching = true;
 
   @override
   void initState() {
@@ -60,17 +62,17 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> fetchForm(BuildContext context) async {
+    setState(() {
+      _isFetching = true;
+    });
+
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final uri = Uri.parse(
-        // ignore: unnecessary_null_comparison
         "$defaultApiURL/setup${demoTenantId != null ? "?tenant_id=$demoTenantId" : ""}",
       );
 
-      // Start timing for debug logging
       final startTime = DateTime.now();
-
-      // Log the request
       String? requestId;
       if (mounted) {
         requestId = context.read<DebugProvider>().logRequest(
@@ -85,10 +87,8 @@ class _SetupScreenState extends State<SetupScreen> {
         headers: {'Accept': 'application/json'},
       );
 
-      // Calculate duration
       final duration = DateTime.now().difference(startTime);
 
-      // Log the response
       if (mounted && requestId != null) {
         context.read<DebugProvider>().logResponse(
           id: requestId,
@@ -103,40 +103,65 @@ class _SetupScreenState extends State<SetupScreen> {
       prefs.setString(AppKeys.noInternetKey, "false");
       await context.read<CommonDataProvider>().checkInternet();
 
-   if (response.statusCode == 200) {
-  final body = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final String installUrl = body['install_url'] ?? "";
+        final String appKey = body['app_key'] ?? "";
 
-  final String installUrl = body['install_url'] ?? "";
-  final String appKey = body['app_key'] ?? "";
+        setState(() {
+          demoUrl = installUrl;
+          demoKey = appKey;
+          urlController = TextEditingController(text: installUrl);
+          keyController = TextEditingController(text: appKey);
+        });
 
-  // Populate the setup form with the server values
-  setState(() {
-    demoUrl = installUrl;
-    demoKey = appKey;
+        context.read<CommonDataProvider>().setCurrentThemeSetting(
+          ThemeSetting.fromJson(body['current_theme_setting'] ?? {}),
+        );
+        if (body['is_demo'] == true) {
+          context.read<CommonDataProvider>().setDemo();
+        }
 
-    urlController ??= TextEditingController();
-    keyController ??= TextEditingController();
+        if (!body['show_setup']) {
+          message = await setup({"install_url": installUrl, "app_key": appKey});
+          setState(() {});
 
-    urlController!.text = installUrl;
-    keyController!.text = appKey;
+          await Loading.stop(context);
 
-    // Always show the setup form.
-    // User must press Connect manually.
-    showForm = true;
-  });
+          if (message?.success == true && mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (ctx) => getNavScreen(
+                  context,
+                  NavLink(
+                    title: "Login",
+                    group: false,
+                    apiUrl: message?.navigateUrl ?? '/login/create',
+                    type: 'form',
+                  ),
+                ),
+              ),
+            );
+            return;
+          } else if (mounted) {
+            showSnackBar(message?.message ?? 'Setup failed', context, type: "error");
+          }
+        }
 
-  // Apply theme
-  context.read<CommonDataProvider>().setCurrentThemeSetting(
-    ThemeSetting.fromJson(body['current_theme_setting'] ?? {}),
-  );
-
-  // Mark demo mode if applicable
-  if (body['is_demo'] == true) {
-    context.read<CommonDataProvider>().setDemo();
-  }
-
-  await Loading.stop(context);
-}
+        if (mounted) {
+          setState(() {
+            showForm = body['show_setup'] ?? false;
+            _isFetching = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          showSnackBar("Failed to fetch setup data. Status: ${response.statusCode}", context, type: "error");
+          setState(() {
+            _isFetching = false;
+          });
+        }
+      }
     } on SocketException catch (_) {
       if (mounted) {
         showSnackBar(
@@ -144,10 +169,16 @@ class _SetupScreenState extends State<SetupScreen> {
           context,
           type: "error",
         );
+        setState(() {
+          _isFetching = false;
+        });
       }
     } catch (e) {
       if (mounted) {
-        showSnackBar("Something went wrong...", context, type: "error");
+        showSnackBar("Something went wrong: $e", context, type: "error");
+        setState(() {
+          _isFetching = false;
+        });
       }
     }
   }
@@ -160,74 +191,126 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> scanQRCode(BuildContext context) async {
-    String code = await FlutterBarcodeScanner.scanBarcode(
-      "#ff6666",
-      "Cancel",
-      true,
-      ScanMode.QR,
-    );
+    try {
+      String code = await FlutterBarcodeScanner.scanBarcode(
+        "#ff6666",
+        "Cancel",
+        true,
+        ScanMode.QR,
+      );
 
-    List items = code.split('?app_key=');
-    if (items.length > 1) {
-      setState(() {
-        urlController?.text = items[0];
-        keyController?.text = items[1];
-      });
+      if (code != '-1') {
+        List items = code.split('?app_key=');
+        if (items.length > 1) {
+          setState(() {
+            urlController?.text = items[0];
+            keyController?.text = items[1];
+          });
 
-      await handleSubmit(context);
+          await handleSubmit(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showSnackBar("QR scan failed: $e", context, type: "error");
+      }
     }
   }
 
   Future<void> handleSubmit(BuildContext context) async {
-    await Loading.start(context);
-
-    if (urlController != null &&
-        keyController != null &&
-        (urlController!.text.isEmpty || keyController!.text.isEmpty)) {
-      await Loading.stop(context);
-      if (mounted) {
-        showSnackBar("Please fill all the fields...", context, type: "error");
-      }
-      return;
-    }
-
-    message = await setup({
-      "install_url": urlController!.text.endsWith('/')
-          ? urlController!.text.substring(0, urlController!.text.length - 1)
-          : urlController!.text,
-      "app_key": keyController!.text,
+    if (_isLoading) return;
+    
+    setState(() {
+      _isLoading = true;
     });
-    setState(() {});
 
-    await Loading.stop(context);
+    try {
+      await Loading.start(context);
 
-    if (message?.success == true) {
-      if (mounted) {
-        showSnackBar(message?.message, context);
+      final urlText = urlController?.text.trim() ?? '';
+      final keyText = keyController?.text.trim() ?? '';
+
+      if (urlText.isEmpty || keyText.isEmpty) {
+        await Loading.stop(context);
+        if (mounted) {
+          showSnackBar("Please fill all the fields...", context, type: "error");
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
       }
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (ctx) => getNavScreen(
-            context,
-            NavLink(
-              title: "Login",
-              group: false,
-              apiUrl: message?.navigateUrl ?? '/login/create',
-              type: 'form',
+      final installUrl = urlText.endsWith('/') 
+          ? urlText.substring(0, urlText.length - 1) 
+          : urlText;
+
+      message = await setup({
+        "install_url": installUrl,
+        "app_key": keyText,
+      });
+      setState(() {});
+
+      await Loading.stop(context);
+
+      if (message?.success == true && mounted) {
+        showSnackBar(message?.message ?? 'Connected successfully', context);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (ctx) => getNavScreen(
+              context,
+              NavLink(
+                title: "Login",
+                group: false,
+                apiUrl: message?.navigateUrl ?? '/login/create',
+                type: 'form',
+              ),
             ),
           ),
-        ),
-      );
-    } else {
+        );
+      } else if (mounted) {
+        showSnackBar(message?.message ?? 'Connection failed', context, type: "error");
+      }
+    } catch (e) {
+      await Loading.stop(context);
       if (mounted) {
-        showSnackBar(message?.message, context, type: "error");
+        showSnackBar("Error: $e", context, type: "error");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isFetching) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text(
+                'Loading setup...',
+                style: TextStyle(
+                  color: useThemeMode(
+                    context,
+                    light: Colors.grey.shade600,
+                    dark: Colors.grey.shade400,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: AppLoader(
         child: SizedBox(
@@ -237,7 +320,7 @@ class _SetupScreenState extends State<SetupScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: AnimatedCrossFade(
-                duration: Duration(milliseconds: 700),
+                duration: const Duration(milliseconds: 700),
                 crossFadeState: showForm
                     ? CrossFadeState.showSecond
                     : CrossFadeState.showFirst,
@@ -352,10 +435,8 @@ class _SetupScreenState extends State<SetupScreen> {
                         horizontal: AppSpacing.kDefaultSpacing(context) * 0.8,
                       ),
                       child: AppButton(
-                        onPressed: () {
-                          handleSubmit(context);
-                        },
-                        title: "Connect",
+                        onPressed: _isLoading ? null : () => handleSubmit(context),
+                        title: _isLoading ? "Connecting..." : "Connect",
                       ),
                     ),
                     SizedBox(height: AppSpacing.kDefaultSpacing(context) * 4),
@@ -399,11 +480,18 @@ class _SetupScreenState extends State<SetupScreen> {
                       width: double.infinity,
                       child: InkWell(
                         onTap: () async {
-                          if (await canLaunchUrl(Uri.parse(defaultServerUrl))) {
-                            await launchUrl(
-                              Uri.parse(defaultServerUrl),
-                              mode: LaunchMode.externalApplication,
-                            );
+                          try {
+                            final url = Uri.parse(defaultServerUrl);
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              showSnackBar("Cannot open URL: $e", context, type: "error");
+                            }
                           }
                         },
                         child: RichText(
