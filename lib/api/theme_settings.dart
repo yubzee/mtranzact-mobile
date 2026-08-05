@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart' as http_io;  // Add this import
+import 'package:http/io_client.dart' as http_io;
 import 'package:salepro/api/client.dart';
 import 'package:salepro/constants/keys.dart';
 import 'package:salepro/models/message.dart';
@@ -14,7 +14,7 @@ class _HttpClient {
     if (kDebugMode) {
       final httpClient = HttpClient()
         ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-      return http_io.IOClient(httpClient);  // Use http_io.IOClient
+      return http_io.IOClient(httpClient);
     }
     return http.Client();
   }
