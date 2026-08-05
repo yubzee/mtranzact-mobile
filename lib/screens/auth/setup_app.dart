@@ -103,56 +103,40 @@ class _SetupScreenState extends State<SetupScreen> {
       prefs.setString(AppKeys.noInternetKey, "false");
       await context.read<CommonDataProvider>().checkInternet();
 
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        final String installUrl = body['install_url'] ?? "";
-        final String appKey = body['app_key'] ?? "";
+   if (response.statusCode == 200) {
+  final body = jsonDecode(response.body);
 
-        setState(() {
-          demoUrl = installUrl;
-          demoKey = appKey;
-          urlController = TextEditingController(text: installUrl);
-          keyController = TextEditingController(text: appKey);
-        });
+  final String installUrl = body['install_url'] ?? "";
+  final String appKey = body['app_key'] ?? "";
 
-        context.read<CommonDataProvider>().setCurrentThemeSetting(
-          ThemeSetting.fromJson(body['current_theme_setting'] ?? {}),
-        );
-        if (body['is_demo'] == true) {
-          context.read<CommonDataProvider>().setDemo();
-        }
+  // Populate the setup form with the server values
+  setState(() {
+    demoUrl = installUrl;
+    demoKey = appKey;
 
-        if (!body['show_setup']) {
-          message = await setup({"install_url": installUrl, "app_key": appKey});
-          setState(() {});
+    urlController ??= TextEditingController();
+    keyController ??= TextEditingController();
 
-          await Loading.stop(context);
+    urlController!.text = installUrl;
+    keyController!.text = appKey;
 
-          if (message?.success == true) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (ctx) => getNavScreen(
-                  context,
-                  NavLink(
-                    title: "Login",
-                    group: false,
-                    apiUrl: message?.navigateUrl ?? '/login/create',
-                    type: 'form',
-                  ),
-                ),
-              ),
-            );
-          } else {
-            if (mounted) {
-              showSnackBar(message?.message, context, type: "error");
-            }
-          }
-        }
+    // Always show the setup form.
+    // User must press Connect manually.
+    showForm = true;
+  });
 
-        setState(() {
-          showForm = body['show_setup'];
-        });
-      }
+  // Apply theme
+  context.read<CommonDataProvider>().setCurrentThemeSetting(
+    ThemeSetting.fromJson(body['current_theme_setting'] ?? {}),
+  );
+
+  // Mark demo mode if applicable
+  if (body['is_demo'] == true) {
+    context.read<CommonDataProvider>().setDemo();
+  }
+
+  await Loading.stop(context);
+}
     } on SocketException catch (_) {
       if (mounted) {
         showSnackBar(
