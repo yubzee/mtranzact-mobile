@@ -3,12 +3,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:solar_icons/solar_icons.dart';
 
 /// Central icon mapper for switching icon packs.
 ///
 /// `iconPack` values come from ThemeSetting.iconPack:
-/// - solar
+/// - solar        → falls back to material (solar_icons package removed)
 /// - fontawesome
 /// - bootstrap
 /// - heroicons
@@ -38,7 +37,7 @@ class IconMapper {
 
   static String normalizePack(String? raw) {
     final v = (raw ?? '').trim().toLowerCase();
-    if (v.isEmpty) return 'solar';
+    if (v.isEmpty) return 'material';
     if (v.contains('font')) return 'fontawesome';
     if (v.contains('boot')) return 'bootstrap';
     if (v.contains('hero')) return 'heroicons';
@@ -46,7 +45,8 @@ class IconMapper {
     if (v.contains('cupertino') || v == 'ios' || v.contains('apple')) {
       return 'cupertino';
     }
-    if (v.contains('solar')) return 'solar';
+    // solar package removed → treat as material
+    if (v.contains('solar')) return 'material';
     return v;
   }
 
@@ -75,11 +75,9 @@ class IconMapper {
         return Icon(_material(iconKey), color: color, size: size);
       case 'cupertino':
         return Icon(_cupertino(iconKey), color: color, size: size);
-      case 'solar':
-        return Icon(_solar(iconKey), color: color, size: size);
       default:
-        // Fall back to solar.
-        return Icon(_solar(iconKey), color: color, size: size);
+        // Fall back to material
+        return Icon(_material(iconKey), color: color, size: size);
     }
   }
 
@@ -87,440 +85,218 @@ class IconMapper {
   // Per-pack mappings
   // ------------------------
 
-  static IconData _solar(String key) {
-    switch (key) {
-      case 'dashboard':
-        return SolarIconsOutline.home;
-      case 'whatsapp':
-        return SolarIconsOutline.chatRoundLine;
-      case 'product':
-        return SolarIconsOutline.boxMinimalistic;
-      case 'purchase':
-        return SolarIconsOutline.card2;
-      case 'sale':
-        return SolarIconsOutline.cartCheck;
-      case 'manufacturing':
-        return SolarIconsOutline.shopMinimalistic;
-      case 'expense':
-        return SolarIconsOutline.dollarMinimalistic;
-      case 'income':
-        return SolarIconsOutline.moneyBag;
-      case 'quotation':
-        return SolarIconsOutline.documentText;
-      case 'transfer':
-        return SolarIconsOutline.mapArrowRight;
-      case 'return':
-        return SolarIconsOutline.mapArrowLeft;
-      case 'accounting':
-        return SolarIconsOutline.calculator;
-      case 'hrm':
-        return SolarIconsOutline.usersGroupTwoRounded;
-      case 'people':
-        return SolarIconsOutline.user;
-      case 'people-setting':
-        return SolarIconsOutline.shieldUser;
-      case 'addons':
-        return SolarIconsOutline.plugCircle;
-      case 'reports':
-        return SolarIconsOutline.fileText;
-      case 'settings':
-        return SolarIconsOutline.settingsMinimalistic;
-      case 'logout':
-        return SolarIconsOutline.logout;
-      case 'plus':
-        return SolarIconsOutline.addSquare;
-      case 'bug':
-        return SolarIconsOutline.bug;
-      case 'delete':
-        return SolarIconsOutline.trashBin2;
-      case 'edit':
-        return SolarIconsOutline.pen;
-      case 'view':
-        return SolarIconsOutline.eye;
-      case 'network':
-        return SolarIconsOutline.wifiRouter;
-      case 'file-import':
-        return SolarIconsOutline.uploadSquare;
-
-      // ------------------------
-      // Screen-level UI icons
-      // ------------------------
-      case 'appearance-system':
-        return SolarIconsOutline.monitor;
-      case 'appearance-light':
-        return SolarIconsOutline.sun;
-      case 'appearance-dark':
-        return SolarIconsOutline.moon;
-      case 'drawer':
-        return SolarIconsOutline.hamburgerMenu;
-
-      case 'status-success':
-        return SolarIconsOutline.checkCircle;
-      case 'status-failed':
-        return SolarIconsOutline.closeCircle;
-      case 'status-warning':
-        return SolarIconsOutline.shieldWarning;
-      case 'status-pending':
-        return SolarIconsOutline.history;
-
-      case 'time':
-        return SolarIconsOutline.history;
-      case 'speed':
-        return SolarIconsOutline.chartSquare;
-      case 'close':
-        return SolarIconsOutline.closeCircle;
-      case 'upload':
-        return SolarIconsOutline.uploadSquare;
-      case 'download':
-        return SolarIconsOutline.uploadSquare;
-      case 'http':
-        return SolarIconsOutline.link;
-      case 'check':
-        return SolarIconsOutline.checkCircle;
-      case 'copy':
-        return SolarIconsOutline.fileText;
-      case 'data-object':
-        return SolarIconsOutline.fileText;
-      case 'inbox':
-        return SolarIconsOutline.fileText;
-      case 'error-outline':
-        return SolarIconsOutline.shieldWarning;
-      case 'code':
-        return SolarIconsOutline.bug;
-      case 'email':
-        return SolarIconsOutline.letter;
-      case 'phone':
-        return SolarIconsOutline.phone;
-
-      case 'chevron-right':
-        return SolarIconsOutline.arrowRight;
-
-      case 'error':
-        return SolarIconsOutline.shieldWarning;
-      case 'qr-scanner':
-        return SolarIconsOutline.qrCode;
-
-      case 'printer':
-        return SolarIconsOutline.printer;
-      case 'check-circle':
-        return SolarIconsOutline.checkCircle;
-      case 'close-circle':
-        return SolarIconsOutline.closeCircle;
-      case 'file-text':
-        return SolarIconsOutline.fileText;
-      case 'arrow-left':
-        return SolarIconsOutline.arrowLeft;
-
-      case 'refresh':
-        return SolarIconsOutline.refreshCircle;
-      case 'document-text':
-        return SolarIconsOutline.documentText;
-      case 'server':
-        return SolarIconsOutline.server;
-      case 'key':
-        return SolarIconsOutline.key;
-
-      // ------------------------
-      // Widget-level UI icons
-      // ------------------------
-      case 'info':
-        return SolarIconsOutline.infoCircle;
-      case 'help':
-        return SolarIconsOutline.questionCircle;
-      case 'plus-circle':
-        return SolarIconsOutline.addSquare;
-      case 'search':
-        return SolarIconsOutline.roundedMagnifier;
-      case 'view-off':
-        return SolarIconsOutline.eyeClosed;
-      case 'warning':
-        return SolarIconsOutline.shieldWarning;
-      case 'more':
-        return SolarIconsOutline.menuDotsCircle;
-      case 'image-not-supported':
-        return SolarIconsOutline.gallery;
-      case 'broken-image':
-        return SolarIconsOutline.gallery;
-      case 'person':
-        return SolarIconsOutline.user;
-      case 'link':
-        return SolarIconsOutline.link;
-      case 'fullscreen':
-        return SolarIconsOutline.fullScreenSquare;
-      case 'chevron-left':
-        return SolarIconsOutline.arrowLeft;
-      case 'arrow-right':
-        return SolarIconsOutline.arrowRight;
-      case 'bluetooth-connected':
-        return SolarIconsOutline.bluetoothCircle;
-      // POS/payment related
-      case 'money':
-        return SolarIconsOutline.dollarMinimalistic;
-      case 'credit-card':
-        return SolarIconsOutline.card2;
-      case 'receipt':
-        return SolarIconsOutline.fileText;
-      case 'gift-card':
-        return SolarIconsOutline.card2;
-      case 'account-balance':
-        return SolarIconsOutline.moneyBag;
-      case 'star':
-        return SolarIconsOutline.star;
-      case 'paypal':
-        return SolarIconsOutline.card2;
-      case 'payment':
-        return SolarIconsOutline.card2;
-      case 'credit-score':
-        return SolarIconsOutline.checkCircle;
-      case 'calendar':
-        return SolarIconsOutline.calendarDate;
-      case 'cancel':
-        return SolarIconsOutline.closeCircle;
-      case 'edit-document':
-        return SolarIconsOutline.documentAdd;
-      case 'drafts':
-        return SolarIconsOutline.fileText;
-      case 'history':
-        return SolarIconsOutline.history;
-      case 'store':
-        return SolarIconsOutline.shop_2;
-      case 'category':
-        return SolarIconsOutline.boxMinimalistic;
-      case 'image':
-        return SolarIconsOutline.gallery;
-
-      // Misc
-      case 'magic-wand':
-        return SolarIconsOutline.starsMinimalistic;
-      case 'chart-square':
-        return SolarIconsOutline.chartSquare;
-      case 'trophy':
-        return SolarIconsOutline.starsMinimalistic;
-      case 'double-arrow-right':
-        return SolarIconsOutline.roundArrowRight;
-      case 'double-arrow-left':
-        return SolarIconsOutline.roundArrowLeft;
-      default:
-        return SolarIconsOutline.questionCircle;
-    }
-  }
-
   static IconData _fontAwesome(String key) {
     switch (key) {
       case 'dashboard':
-        return FontAwesomeIcons.houseChimney;
+        return FontAwesomeIcons.houseChimney.data;
       case 'whatsapp':
-        return FontAwesomeIcons.squareWhatsapp;
+        return FontAwesomeIcons.squareWhatsapp.data;
       case 'product':
-        return FontAwesomeIcons.boxArchive;
+        return FontAwesomeIcons.boxArchive.data;
       case 'purchase':
-        return FontAwesomeIcons.solidCreditCard;
+        return FontAwesomeIcons.solidCreditCard.data;
       case 'sale':
-        return FontAwesomeIcons.cartShopping;
+        return FontAwesomeIcons.cartShopping.data;
       case 'manufacturing':
-        return FontAwesomeIcons.industry;
+        return FontAwesomeIcons.industry.data;
       case 'expense':
-        return FontAwesomeIcons.moneyBill;
+        return FontAwesomeIcons.moneyBill.data;
       case 'income':
-        return FontAwesomeIcons.sackDollar;
+        return FontAwesomeIcons.sackDollar.data;
       case 'quotation':
-        return FontAwesomeIcons.fileInvoice;
+        return FontAwesomeIcons.fileInvoice.data;
       case 'transfer':
-        return FontAwesomeIcons.rightLeft;
+        return FontAwesomeIcons.rightLeft.data;
       case 'return':
-        return FontAwesomeIcons.reply;
+        return FontAwesomeIcons.reply.data;
       case 'accounting':
-        return FontAwesomeIcons.calculator;
+        return FontAwesomeIcons.calculator.data;
       case 'hrm':
-        return FontAwesomeIcons.users;
+        return FontAwesomeIcons.users.data;
       case 'people':
-        return FontAwesomeIcons.usersGear;
+        return FontAwesomeIcons.usersGear.data;
       case 'people-setting':
-        return FontAwesomeIcons.userGear;
+        return FontAwesomeIcons.userGear.data;
       case 'addons':
-        return FontAwesomeIcons.puzzlePiece;
+        return FontAwesomeIcons.puzzlePiece.data;
       case 'reports':
-        return FontAwesomeIcons.fileCircleCheck;
+        return FontAwesomeIcons.fileCircleCheck.data;
       case 'settings':
-        return FontAwesomeIcons.gear;
+        return FontAwesomeIcons.gear.data;
       case 'logout':
-        return FontAwesomeIcons.rightFromBracket;
+        return FontAwesomeIcons.rightFromBracket.data;
       case 'plus':
-        return FontAwesomeIcons.plus;
+        return FontAwesomeIcons.plus.data;
       case 'bug':
-        return FontAwesomeIcons.bug;
+        return FontAwesomeIcons.bug.data;
       case 'delete':
-        return FontAwesomeIcons.trash;
+        return FontAwesomeIcons.trash.data;
       case 'edit':
-        return FontAwesomeIcons.pen;
+        return FontAwesomeIcons.pen.data;
       case 'view':
-        return FontAwesomeIcons.eye;
+        return FontAwesomeIcons.eye.data;
       case 'network':
-        return FontAwesomeIcons.wifi;
+        return FontAwesomeIcons.wifi.data;
       case 'file-import':
-        return FontAwesomeIcons.fileImport;
+        return FontAwesomeIcons.fileImport.data;
 
-      // ------------------------
       // Screen-level UI icons
-      // ------------------------
       case 'appearance-system':
-        return FontAwesomeIcons.circleHalfStroke;
+        return FontAwesomeIcons.circleHalfStroke.data;
       case 'appearance-light':
-        return FontAwesomeIcons.sun;
+        return FontAwesomeIcons.sun.data;
       case 'appearance-dark':
-        return FontAwesomeIcons.moon;
+        return FontAwesomeIcons.moon.data;
       case 'drawer':
-        return FontAwesomeIcons.bars;
+        return FontAwesomeIcons.bars.data;
 
       case 'status-success':
-        return FontAwesomeIcons.circleCheck;
+        return FontAwesomeIcons.circleCheck.data;
       case 'status-failed':
-        return FontAwesomeIcons.circleXmark;
+        return FontAwesomeIcons.circleXmark.data;
       case 'status-warning':
-        return FontAwesomeIcons.triangleExclamation;
+        return FontAwesomeIcons.triangleExclamation.data;
       case 'status-pending':
-        return FontAwesomeIcons.clock;
+        return FontAwesomeIcons.clock.data;
 
       case 'time':
-        return FontAwesomeIcons.clock;
+        return FontAwesomeIcons.clock.data;
       case 'speed':
-        return FontAwesomeIcons.gaugeHigh;
+        return FontAwesomeIcons.gaugeHigh.data;
       case 'close':
-        return FontAwesomeIcons.xmark;
+        return FontAwesomeIcons.xmark.data;
       case 'upload':
-        return FontAwesomeIcons.upload;
+        return FontAwesomeIcons.upload.data;
       case 'download':
-        return FontAwesomeIcons.download;
+        return FontAwesomeIcons.download.data;
       case 'http':
-        return FontAwesomeIcons.globe;
+        return FontAwesomeIcons.globe.data;
       case 'check':
-        return FontAwesomeIcons.check;
+        return FontAwesomeIcons.check.data;
       case 'copy':
-        return FontAwesomeIcons.copy;
+        return FontAwesomeIcons.copy.data;
       case 'data-object':
-        return FontAwesomeIcons.database;
+        return FontAwesomeIcons.database.data;
       case 'inbox':
-        return FontAwesomeIcons.inbox;
+        return FontAwesomeIcons.inbox.data;
       case 'error-outline':
-        return FontAwesomeIcons.circleExclamation;
+        return FontAwesomeIcons.circleExclamation.data;
       case 'code':
-        return FontAwesomeIcons.code;
+        return FontAwesomeIcons.code.data;
       case 'email':
-        return FontAwesomeIcons.envelope;
+        return FontAwesomeIcons.envelope.data;
       case 'phone':
-        return FontAwesomeIcons.phone;
+        return FontAwesomeIcons.phone.data;
 
       case 'chevron-right':
-        return FontAwesomeIcons.chevronRight;
+        return FontAwesomeIcons.chevronRight.data;
 
       case 'error':
-        return FontAwesomeIcons.triangleExclamation;
+        return FontAwesomeIcons.triangleExclamation.data;
       case 'qr-scanner':
-        return FontAwesomeIcons.qrcode;
+        return FontAwesomeIcons.qrcode.data;
 
       case 'printer':
-        return FontAwesomeIcons.print;
+        return FontAwesomeIcons.print.data;
       case 'check-circle':
-        return FontAwesomeIcons.circleCheck;
+        return FontAwesomeIcons.circleCheck.data;
       case 'close-circle':
-        return FontAwesomeIcons.circleXmark;
+        return FontAwesomeIcons.circleXmark.data;
       case 'file-text':
-        return FontAwesomeIcons.fileLines;
+        return FontAwesomeIcons.fileLines.data;
       case 'arrow-left':
-        return FontAwesomeIcons.arrowLeft;
+        return FontAwesomeIcons.arrowLeft.data;
 
       case 'refresh':
-        return FontAwesomeIcons.arrowsRotate;
+        return FontAwesomeIcons.arrowsRotate.data;
       case 'document-text':
-        return FontAwesomeIcons.fileLines;
+        return FontAwesomeIcons.fileLines.data;
       case 'server':
-        return FontAwesomeIcons.server;
+        return FontAwesomeIcons.server.data;
       case 'key':
-        return FontAwesomeIcons.key;
+        return FontAwesomeIcons.key.data;
 
-      // ------------------------
       // Widget-level UI icons
-      // ------------------------
       case 'info':
-        return FontAwesomeIcons.circleInfo;
+        return FontAwesomeIcons.circleInfo.data;
       case 'help':
-        return FontAwesomeIcons.circleQuestion;
+        return FontAwesomeIcons.circleQuestion.data;
       case 'plus-circle':
-        return FontAwesomeIcons.circlePlus;
+        return FontAwesomeIcons.circlePlus.data;
       case 'search':
-        return FontAwesomeIcons.magnifyingGlass;
+        return FontAwesomeIcons.magnifyingGlass.data;
       case 'view-off':
-        return FontAwesomeIcons.eyeSlash;
+        return FontAwesomeIcons.eyeSlash.data;
       case 'warning':
-        return FontAwesomeIcons.triangleExclamation;
+        return FontAwesomeIcons.triangleExclamation.data;
       case 'more':
-        return FontAwesomeIcons.ellipsisVertical;
+        return FontAwesomeIcons.ellipsisVertical.data;
       case 'image-not-supported':
-        return FontAwesomeIcons.image;
+        return FontAwesomeIcons.image.data;
       case 'broken-image':
-        return FontAwesomeIcons.image;
+        return FontAwesomeIcons.image.data;
       case 'person':
-        return FontAwesomeIcons.user;
+        return FontAwesomeIcons.user.data;
       case 'link':
-        return FontAwesomeIcons.link;
+        return FontAwesomeIcons.link.data;
       case 'fullscreen':
-        return FontAwesomeIcons.expand;
+        return FontAwesomeIcons.expand.data;
       case 'chevron-left':
-        return FontAwesomeIcons.chevronLeft;
+        return FontAwesomeIcons.chevronLeft.data;
       case 'arrow-right':
-        return FontAwesomeIcons.arrowRight;
+        return FontAwesomeIcons.arrowRight.data;
       case 'bluetooth-connected':
-        return FontAwesomeIcons.bluetooth;
+        return FontAwesomeIcons.bluetooth.data;
 
       // POS/payment related
       case 'money':
-        return FontAwesomeIcons.dollarSign;
+        return FontAwesomeIcons.dollarSign.data;
       case 'credit-card':
-        return FontAwesomeIcons.creditCard;
+        return FontAwesomeIcons.creditCard.data;
       case 'receipt':
-        return FontAwesomeIcons.receipt;
+        return FontAwesomeIcons.receipt.data;
       case 'gift-card':
-        return FontAwesomeIcons.gift;
+        return FontAwesomeIcons.gift.data;
       case 'account-balance':
-        return FontAwesomeIcons.buildingColumns;
+        return FontAwesomeIcons.buildingColumns.data;
       case 'star':
-        return FontAwesomeIcons.star;
+        return FontAwesomeIcons.star.data;
       case 'paypal':
-        return FontAwesomeIcons.paypal;
+        return FontAwesomeIcons.paypal.data;
       case 'payment':
-        return FontAwesomeIcons.creditCard;
+        return FontAwesomeIcons.creditCard.data;
       case 'credit-score':
-        return FontAwesomeIcons.shield;
+        return FontAwesomeIcons.shield.data;
       case 'calendar':
-        return FontAwesomeIcons.calendarDays;
+        return FontAwesomeIcons.calendarDays.data;
       case 'cancel':
-        return FontAwesomeIcons.ban;
+        return FontAwesomeIcons.ban.data;
       case 'edit-document':
-        return FontAwesomeIcons.filePen;
+        return FontAwesomeIcons.filePen.data;
       case 'drafts':
-        return FontAwesomeIcons.fileLines;
+        return FontAwesomeIcons.fileLines.data;
       case 'history':
-        return FontAwesomeIcons.clockRotateLeft;
+        return FontAwesomeIcons.clockRotateLeft.data;
       case 'store':
-        return FontAwesomeIcons.store;
+        return FontAwesomeIcons.store.data;
       case 'category':
-        return FontAwesomeIcons.tags;
+        return FontAwesomeIcons.tags.data;
       case 'image':
-        return FontAwesomeIcons.image;
+        return FontAwesomeIcons.image.data;
 
       // Misc
       case 'magic-wand':
-        return FontAwesomeIcons.wandMagicSparkles;
+        return FontAwesomeIcons.wandMagicSparkles.data;
       case 'chart-square':
-        return FontAwesomeIcons.chartColumn;
+        return FontAwesomeIcons.chartColumn.data;
       case 'trophy':
-        return FontAwesomeIcons.trophy;
+        return FontAwesomeIcons.trophy.data;
       case 'double-arrow-right':
-        return FontAwesomeIcons.anglesRight;
+        return FontAwesomeIcons.anglesRight.data;
       case 'double-arrow-left':
-        return FontAwesomeIcons.anglesLeft;
+        return FontAwesomeIcons.anglesLeft.data;
       default:
-        return FontAwesomeIcons.circleQuestion;
+        return FontAwesomeIcons.circleQuestion.data;
     }
   }
 
@@ -579,9 +355,7 @@ class IconMapper {
       case 'file-import':
         return BootstrapIcons.file_arrow_up;
 
-      // ------------------------
       // Screen-level UI icons
-      // ------------------------
       case 'appearance-system':
         return BootstrapIcons.circle_half;
       case 'appearance-light':
@@ -657,9 +431,7 @@ class IconMapper {
       case 'key':
         return BootstrapIcons.key;
 
-      // ------------------------
       // Widget-level UI icons
-      // ------------------------
       case 'info':
         return BootstrapIcons.info_circle;
       case 'help':
@@ -798,9 +570,7 @@ class IconMapper {
       case 'file-import':
         return HeroIcons.arrowUpOnSquare;
 
-      // ------------------------
       // Screen-level UI icons
-      // ------------------------
       case 'appearance-system':
         return HeroIcons.cog;
       case 'appearance-light':
@@ -876,9 +646,7 @@ class IconMapper {
       case 'key':
         return HeroIcons.key;
 
-      // ------------------------
       // Widget-level UI icons
-      // ------------------------
       case 'info':
         return HeroIcons.informationCircle;
       case 'help':
@@ -1017,9 +785,7 @@ class IconMapper {
       case 'file-import':
         return CupertinoIcons.arrow_down_doc;
 
-      // ------------------------
       // Screen-level UI icons
-      // ------------------------
       case 'appearance-system':
         return CupertinoIcons.device_phone_portrait;
       case 'appearance-light':
@@ -1095,9 +861,7 @@ class IconMapper {
       case 'key':
         return CupertinoIcons.lock;
 
-      // ------------------------
       // Widget-level UI icons
-      // ------------------------
       case 'info':
         return CupertinoIcons.info;
       case 'help':
@@ -1236,9 +1000,7 @@ class IconMapper {
       case 'file-import':
         return Icons.file_upload_outlined;
 
-      // ------------------------
       // Screen-level UI icons
-      // ------------------------
       case 'appearance-system':
         return Icons.brightness_auto;
       case 'appearance-light':
@@ -1314,9 +1076,7 @@ class IconMapper {
       case 'key':
         return Icons.key_rounded;
 
-      // ------------------------
       // Widget-level UI icons
-      // ------------------------
       case 'info':
         return Icons.info_outline_rounded;
       case 'help':
