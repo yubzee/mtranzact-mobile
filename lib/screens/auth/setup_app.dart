@@ -173,6 +173,22 @@ class _SetupScreenState extends State<SetupScreen> {
           _isFetching = false;
         });
       }
+    } on HandshakeException catch (e) {
+      if (mounted) {
+        showSnackBar(
+          "SSL/TLS handshake failed. This could be due to:\n"
+          "• Self-signed certificate\n"
+          "• Expired certificate\n"
+          "• Server using HTTP instead of HTTPS\n"
+          "• Firewall blocking the connection\n\n"
+          "Error: ${e.message}",
+          context,
+          type: "error",
+        );
+        setState(() {
+          _isFetching = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         showSnackBar("Something went wrong: $e", context, type: "error");
@@ -270,6 +286,17 @@ class _SetupScreenState extends State<SetupScreen> {
         );
       } else if (mounted) {
         showSnackBar(message?.message ?? 'Connection failed', context, type: "error");
+      }
+    } on HandshakeException catch (e) {
+      await Loading.stop(context);
+      if (mounted) {
+        showSnackBar(
+          "SSL/TLS handshake failed. Please check your server URL.\n"
+          "If your server uses HTTP, make sure to use http:// not https://\n"
+          "Error: ${e.message}",
+          context,
+          type: "error",
+        );
       }
     } catch (e) {
       await Loading.stop(context);

@@ -1,11 +1,37 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:salepro/api/client.dart';
 import 'package:salepro/constants/keys.dart';
 import 'package:salepro/models/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Create a custom HTTP client that ignores SSL errors for development
+class _HttpClient {
+  static http.Client _createClient() {
+    if (kDebugMode) {
+      final httpClient = HttpClient()
+        ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      return http.IOClient(httpClient);
+    }
+    return http.Client();
+  }
+
+  static Future<http.Response> post(
+    Uri url, {
+    Map<String, String>? headers,
+    Object? body,
+    Encoding? encoding,
+  }) async {
+    final client = _createClient();
+    try {
+      return await client.post(url, headers: headers, body: body, encoding: encoding);
+    } finally {
+      client.close();
+    }
+  }
+}
 
 Future<Message> changeActiveThemeSetting(int themeId) async {
   try {
@@ -29,7 +55,7 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
       },
     );
 
-    final response = await http.post(
+    final response = await _HttpClient.post(
       uri,
       headers: {
         'Accept': 'application/json',
@@ -109,6 +135,11 @@ Future<Message> changeActiveThemeSetting(int themeId) async {
     return Message.fromJson({
       'success': false,
       'message': 'No internet connection.',
+    });
+  } on HandshakeException catch (e) {
+    return Message.fromJson({
+      'success': false,
+      'message': 'SSL/TLS handshake failed: $e',
     });
   } catch (e) {
     return Message.fromJson({
