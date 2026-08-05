@@ -7,6 +7,6 @@
 
 const defaultAppName = "MTranzact";
 const defaultAppShortCode = 'mtranzact';
-const defaultServerUrl = "http://mtranzact.com";
+const defaultServerUrl = "https://mtranzact.com";
 const defaultApiURL = "$defaultServerUrl/api";
-const demoTenantId = 'demo';
+const demoTenantId = 'oliver';
